@@ -70,7 +70,7 @@ export function useAnalytics(view, viewData) {
     // Uncomment ONE of these when ready:
     
     // --- Google Analytics (gtag.js) ---
-    // if (window.gtag) window.gtag('event', 'page_view', { page_path: page });
+    if (window.gtag) window.gtag('event', 'page_view', { page_path: page });
     
     // --- Plausible ---
     // if (window.plausible) window.plausible('pageview', { u: window.location.origin + page });
