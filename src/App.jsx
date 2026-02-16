@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { testCategories, questionBank } from "./data/questions.js";
+import { useSEO, useAnalytics } from "./seo.jsx";
 
 /* ═══════════════════════════════════════════
-   DATA
+   DATA (imported from ./data/questions.js)
    ═══════════════════════════════════════════ */
 
 
