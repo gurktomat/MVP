@@ -3,84 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 /* ═══════════════════════════════════════════
    DATA
    ═══════════════════════════════════════════ */
-const testCategories = [
-  {
-    id: "driving", name: "Driving License", icon: "🚗",
-    description: "Car, motorcycle & CDL practice tests",
-    gradient: "from-sky-400 to-blue-600",
-    accent: "#2563eb",
-    tests: [
-      { id: "car-permit", name: "Car Permit Test", icon: "🚙", questionCount: 25, passingScore: 80, timeLimit: 25, description: "Practice for your DMV written knowledge test" },
-      { id: "motorcycle", name: "Motorcycle Permit", icon: "🏍️", questionCount: 25, passingScore: 80, timeLimit: 25, description: "Motorcycle endorsement knowledge test" },
-      { id: "cdl", name: "CDL General Knowledge", icon: "🚛", questionCount: 25, passingScore: 80, timeLimit: 30, description: "Commercial Driver License general knowledge" },
-    ],
-  },
-  {
-    id: "citizenship", name: "US Citizenship", icon: "🇺🇸",
-    description: "Civics & naturalization test prep",
-    gradient: "from-rose-400 to-red-600",
-    accent: "#dc2626",
-    tests: [
-      { id: "civics", name: "Civics Test", icon: "🏛️", questionCount: 20, passingScore: 60, timeLimit: 20, description: "100 civics questions for naturalization" },
-    ],
-  },
-  {
-    id: "real-estate", name: "Real Estate", icon: "🏠",
-    description: "Real estate license exam prep",
-    gradient: "from-emerald-400 to-green-600",
-    accent: "#16a34a",
-    tests: [
-      { id: "re-national", name: "National Exam Prep", icon: "📋", questionCount: 20, passingScore: 75, timeLimit: 30, description: "National real estate exam practice" },
-    ],
-  },
-  {
-    id: "food-handler", name: "Food Handler", icon: "🍽️",
-    description: "Food safety certification prep",
-    gradient: "from-amber-400 to-orange-600",
-    accent: "#d97706",
-    tests: [
-      { id: "food-safety", name: "Food Safety Test", icon: "🧑‍🍳", questionCount: 20, passingScore: 75, timeLimit: 20, description: "ServSafe-style food handler test" },
-    ],
-  },
-];
 
-const questionBank = {
-  "car-permit": [
-    { id: 1, question: "What does a flashing red traffic light mean?", options: ["Stop and wait for green", "Stop, then proceed when safe (treat as stop sign)", "Slow down and proceed with caution", "The signal is broken, proceed normally"], correct: 1, explanation: "A flashing red light must be treated the same as a stop sign. Stop completely, yield to traffic and pedestrians, then proceed when safe." },
-    { id: 2, question: "When approaching a school bus with flashing red lights and extended stop arm, you must:", options: ["Slow down to 15 mph", "Stop only if children are visible", "Stop regardless of your direction of travel", "Honk and pass carefully"], correct: 2, explanation: "You must stop for a school bus with flashing red lights. This applies in both directions unless separated by a physical median." },
-    { id: 3, question: "What is the legal BAC limit for drivers 21+ in most states?", options: ["0.05%", "0.08%", "0.10%", "0.02%"], correct: 1, explanation: "In most U.S. states, the legal BAC limit for drivers 21+ is 0.08%." },
-    { id: 4, question: "What should you do when you see a yellow traffic light?", options: ["Speed up to clear the intersection", "Stop immediately", "Slow down and prepare to stop", "Flash your headlights"], correct: 2, explanation: "A yellow light means the signal is about to turn red. Slow down and prepare to stop unless too close to stop safely." },
-    { id: 5, question: "When parking uphill with a curb, which way should you turn your wheels?", options: ["Away from the curb (left)", "Toward the curb (right)", "Keep them straight", "It doesn't matter"], correct: 0, explanation: "Turn wheels away from curb (left) when parking uphill. If the car rolls backward, the tire catches the curb." },
-    { id: 6, question: "What does a solid white line between lanes mean?", options: ["Change lanes freely", "Lane changes discouraged but not prohibited", "Only left turns allowed", "Road is about to end"], correct: 1, explanation: "A solid white line discourages lane changes but doesn't prohibit them. Double solid white means prohibited." },
-    { id: 7, question: "What is the recommended following distance in normal conditions?", options: ["1 second", "2 seconds", "3-4 seconds", "5-6 seconds"], correct: 2, explanation: "Maintain at least 3-4 seconds following distance. Increase in poor weather or road conditions." },
-    { id: 8, question: "At an intersection with no signs or signals, who has the right of way?", options: ["Driver on the left", "Driver on the right", "Driver going straight", "First to arrive always"], correct: 1, explanation: "At an uncontrolled intersection, yield to the vehicle on your right." },
-    { id: 9, question: "When is it legal to pass using the right lane?", options: ["Never", "When the vehicle ahead is turning left", "Only on highways", "Anytime you want"], correct: 1, explanation: "Pass on the right when the vehicle ahead is turning left, on one-way streets, or multi-lane roads." },
-    { id: 10, question: "What should you do if your vehicle hydroplanes?", options: ["Brake hard immediately", "Accelerate to gain traction", "Ease off gas and steer straight", "Turn sharply to shoulder"], correct: 2, explanation: "Ease off the gas and steer straight. Don't brake hard or turn suddenly." },
-    { id: 11, question: "What does a pentagon-shaped sign indicate?", options: ["Railroad crossing", "School zone", "Construction zone", "Yield ahead"], correct: 1, explanation: "Pentagon-shaped signs indicate school zones." },
-    { id: 12, question: "How far before a turn should you signal?", options: ["50 feet", "100 feet", "200 feet", "At the intersection"], correct: 1, explanation: "Signal at least 100 feet before turning. On highways, signal earlier." },
-    { id: 13, question: "What is the primary purpose of ABS?", options: ["Stop the car faster", "Prevent wheels from locking during hard braking", "Reduce brake pad wear", "Help with parking"], correct: 1, explanation: "ABS prevents wheel lock-up during hard braking, maintaining steering control." },
-    { id: 14, question: "When driving in fog, you should use:", options: ["High beam headlights", "Low beam headlights", "Parking lights only", "No lights"], correct: 1, explanation: "Use low beams in fog. High beams reflect off fog creating glare." },
-    { id: 15, question: "What does a double yellow center line mean?", options: ["Passing allowed both directions", "No passing in either direction", "Only your lane can pass", "Carpool lane"], correct: 1, explanation: "Double solid yellow means no passing in either direction." },
-    { id: 16, question: "If you miss your highway exit, you should:", options: ["Back up to the exit", "Stop and wait for a gap", "Continue to the next exit", "Make a U-turn"], correct: 2, explanation: "Continue to the next exit. Never back up, stop, or U-turn on a highway." },
-    { id: 17, question: "When an emergency vehicle with flashing lights approaches:", options: ["Speed up to clear the way", "Stop where you are", "Pull over to the right and stop", "Continue at the same speed"], correct: 2, explanation: "Pull to the right and stop until it passes." },
-    { id: 18, question: "Blind spots are areas around your vehicle that:", options: ["Are visible in mirrors", "Cannot be seen in mirrors", "Only exist on the left", "Disappear at low speed"], correct: 1, explanation: "Blind spots can't be seen in mirrors. Always turn your head before changing lanes." },
-    { id: 19, question: "What is the move-over law?", options: ["Move for pedestrians always", "Slow down or change lanes for stopped emergency vehicles", "Move to the left lane on highways", "Let faster traffic pass"], correct: 1, explanation: "Change lanes or slow down when approaching stopped emergency or service vehicles." },
-    { id: 20, question: "When making a right turn on red, you must:", options: ["Turn immediately if clear", "Come to a complete stop first, then turn when safe", "Slow down and turn", "Always wait for green"], correct: 1, explanation: "Stop completely, yield to pedestrians and cross traffic, then turn when safe." },
-    { id: 21, question: "What is the safest way to enter a highway?", options: ["Stop at the ramp end", "Merge slowly", "Accelerate to match traffic speed, then merge", "Use the shoulder"], correct: 2, explanation: "Use the acceleration lane to match speed, check mirrors and blind spots, merge smoothly." },
-    { id: 22, question: "A diamond-shaped sign indicates:", options: ["School zone", "A warning", "A regulation", "Construction"], correct: 1, explanation: "Diamond signs warn about hazards ahead." },
-    { id: 23, question: "What does a flashing yellow traffic light mean?", options: ["Stop and wait", "About to turn red", "Slow down and proceed with caution", "Yield to traffic on right"], correct: 2, explanation: "Flashing yellow means proceed with caution. You don't need to stop." },
-    { id: 24, question: "When parallel parking, how close to the curb?", options: ["6 inches", "12 inches", "18 inches (1.5 feet)", "24 inches"], correct: 2, explanation: "No more than 18 inches from the curb in most states." },
-    { id: 25, question: "What should you do if a tire blows out?", options: ["Brake hard", "Grip wheel firmly, ease off gas, coast to a stop", "Accelerate", "Turn off the engine"], correct: 1, explanation: "Grip the wheel, ease off gas, coast to a safe stop. Don't brake hard." },
-  ],
-  motorcycle: [
-    { id: 1, question: "Best lane position for visibility?", options: ["Left portion", "Center", "Right portion", "It varies with the situation"], correct: 3, explanation: "Best position varies. Adjust for visibility and space cushion." },
-    { id: 2, question: "Recommended group riding formation?", options: ["Single file", "Side by side", "Staggered formation", "Any formation"], correct: 2, explanation: "Staggered formation gives adequate space and escape routes." },
-  ],
-  civics: [
-    { id: 1, question: "What is the supreme law of the land?", options: ["Declaration of Independence", "The Constitution", "The Bill of Rights", "Federal law"], correct: 1, explanation: "The Constitution is the supreme law of the land." },
-    { id: 2, question: "How many amendments does the Constitution have?", options: ["10", "21", "27", "33"], correct: 2, explanation: "27 amendments. The first 10 are the Bill of Rights." },
-  ],
-};
 
 /* ═══════════════════════════════════════════
    HOOKS
@@ -862,6 +785,8 @@ export default function App() {
   const [stats, setStats] = useState({});
 
   const nav = useCallback((v, d = null) => { setView(v); setViewData(d); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
+  useSEO(view, viewData);
+  useAnalytics(view, viewData);
   const onDone = useCallback((id, r) => { setStats((p) => { const e = p[id] || { attempts: 0, bestScore: 0, passed: false, history: [] }; return { ...p, [id]: { attempts: e.attempts + 1, bestScore: Math.max(e.bestScore, r.score), passed: e.passed || r.passed, lastScore: r.score, history: [...(e.history || []), r] } }; }); }, []);
 
   const renderView = () => {
