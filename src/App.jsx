@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { Routes, Route, useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import { testCategories, questionBank } from "./data/questions.js";
 import { useSEO, useAnalytics } from "./seo.jsx";
 import { useMastery } from "./hooks/useMastery.js";
@@ -6,6 +7,7 @@ import { useGoal } from "./hooks/useGoal.js";
 import { MASTERY_LABELS, MASTERY_COLORS } from "./utils/sm2.js";
 import { MYSTERY_THRESHOLDS, MULTIPLIER_WEIGHTS, SPIN_SEGMENTS } from "./data/rewards.js";
 import { getContextualQuote } from "./data/quotes.js";
+import { viewToUrl, urlToView, URL_TO_TEST_MAP, URL_TO_CATEGORY_MAP } from "./utils/routes.js";
 import SpinWheel from "./components/SpinWheel.jsx";
 import { CelebrationOverlay } from "./components/Celebrations.jsx";
 import QuickFirePage from "./components/QuickFire.jsx";
@@ -13,6 +15,7 @@ import SmartStudyPage from "./components/SmartStudy.jsx";
 import ShareCard from "./components/ShareCard.jsx";
 import OnboardingFlow from "./components/Onboarding.jsx";
 import WeakAreasPage from "./components/WeakAreas.jsx";
+import StateLandingPage from "./components/StateLanding.jsx";
 import {
   Home, BookOpen, BarChart3, Sun, Moon, Flame, Sparkles, Trophy, Target, Zap,
   Clock, CheckCircle2, XCircle, ChevronRight, ArrowLeft, X, FileText, Award,
@@ -2057,12 +2060,56 @@ const Footer = ({ bp }) => {
 };
 
 /* ═══════════════════════════════════════════
+   ROUTE WRAPPER COMPONENTS
+   Extract URL params and pass to existing components
+   ═══════════════════════════════════════════ */
+function CategoryPageWrapper(props) {
+  const { categorySlug } = useParams();
+  const categoryId = URL_TO_CATEGORY_MAP[categorySlug] || categorySlug;
+  return <CategoryPage categoryId={categoryId} {...props} />;
+}
+
+function QuizPageWrapper(props) {
+  const { testSlug } = useParams();
+  const testId = URL_TO_TEST_MAP[testSlug];
+  const [quizStarted, setQuizStarted] = useState(false);
+
+  if (!testId) return <Navigate to="/" replace />;
+
+  // For state DMV tests, show landing page first
+  const testInfo = testCategories.flatMap(c => c.tests).find(t => t.id === testId);
+  if (testInfo?.stateAbbrev && !quizStarted) {
+    return (
+      <StateLandingPage
+        testId={testId}
+        stateAbbrev={testInfo.stateAbbrev}
+        onStartQuiz={() => setQuizStarted(true)}
+        onNavigate={props.onNavigate}
+        bp={props.bp}
+      />
+    );
+  }
+
+  return <QuizPage testId={testId} {...props} />;
+}
+
+function QuickFireWrapper(props) {
+  const { testId } = useParams();
+  return <QuickFirePage testId={testId} {...props} />;
+}
+
+function SmartStudyWrapper(props) {
+  const { testId } = useParams();
+  return <SmartStudyPage testId={testId} {...props} />;
+}
+
+/* ═══════════════════════════════════════════
    MAIN APP
    ═══════════════════════════════════════════ */
 export default function App() {
   const bp = useBreakpoint();
-  const [view, setView] = useState("home");
-  const [viewData, setViewData] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [stats, setStats] = useLocalStorage("ql-stats", {});
   const [gameState, setGameState] = useLocalStorage("ql-game", INITIAL_GAME_STATE);
   const { resolved: themeResolved, toggle: themeToggle } = useTheme();
@@ -2070,7 +2117,17 @@ export default function App() {
   const { mastery, recordAnswer, getWeakQuestions, getMasteryStats, getQuestionMastery, dueCount } = useMastery();
   const goalHook = useGoal();
 
-  const nav = useCallback((v, d = null) => { setView(v); setViewData(d); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
+  // Derive view/viewData from URL for SEO and analytics
+  const { view, viewData } = useMemo(() => urlToView(location.pathname), [location.pathname]);
+
+  // Navigation adapter: all 31 existing onNavigate calls still work as nav("quiz", "dmv-ca")
+  // but now they push real URLs via React Router
+  const nav = useCallback((v, d = null) => {
+    const url = viewToUrl(v, d);
+    navigate(url);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [navigate]);
+
   useSEO(view, viewData);
   useAnalytics(view, viewData);
 
@@ -2246,29 +2303,9 @@ export default function App() {
   // Daily multiplier info
   const dailyMultiplierInfo = getDailyMultiplier();
 
-  const renderView = () => {
-    switch (view) {
-      case "home": return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState}
-        dueCount={dueCount} goalHook={goalHook} getMasteryStats={getMasteryStats}
-        dailyMultiplierInfo={dailyMultiplierInfo} onShowSpin={() => setShowSpinWheel(true)} />;
-      case "categories": return <CategoriesPage onNavigate={nav} stats={stats} bp={bp} />;
-      case "category": return <CategoryPage categoryId={viewData} onNavigate={nav} stats={stats} bp={bp} />;
-      case "quiz": return <QuizPage testId={viewData} onNavigate={nav} onComplete={onDone} bp={bp}
-        gameState={gameState} recordAnswer={recordAnswer} onShowShare={setShowShareCard} />;
-      case "progress": return <ProgressPage stats={stats} onNavigate={nav} bp={bp} gameState={gameState}
-        getMasteryStats={getMasteryStats} goalHook={goalHook} />;
-      case "weak-areas": return <WeakAreasPage onNavigate={nav} onComplete={onDone} bp={bp}
-        gameState={gameState} getWeakQuestions={getWeakQuestions} recordAnswer={recordAnswer} />;
-      case "quick-fire": return <QuickFirePage testId={viewData} onNavigate={nav} onComplete={onDone}
-        bp={bp} gameState={gameState} />;
-      case "smart-study": return <SmartStudyPage testId={viewData} onNavigate={nav} onComplete={onDone}
-        bp={bp} gameState={gameState} recordAnswer={recordAnswer} getWeakQuestions={getWeakQuestions} mastery={mastery} />;
-      default: return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState}
-        dueCount={dueCount} goalHook={goalHook} getMasteryStats={getMasteryStats}
-        dailyMultiplierInfo={dailyMultiplierInfo} onShowSpin={() => setShowSpinWheel(true)} />;
-    }
-  };
-
+  // Shared props for page components
+  const homeProps = { onNavigate: nav, bp, stats, gameState, dueCount, goalHook, getMasteryStats, dailyMultiplierInfo, onShowSpin: () => setShowSpinWheel(true) };
+  const quizProps = { onNavigate: nav, onComplete: onDone, bp, gameState, recordAnswer, onShowShare: setShowShareCard };
   const navProps = { streak: gameState.streak || 0, xp: gameState.xp || 0, themeResolved, themeToggle };
 
   return (
@@ -2286,7 +2323,19 @@ export default function App() {
       {bp === "tablet" && <TabletSidebar currentView={view} onNavigate={nav} {...navProps} />}
       {(bp === "desktop" || bp === "4k") && <DesktopHeader currentView={view} onNavigate={nav} is4k={bp === "4k"} {...navProps} />}
 
-      <main style={{ flex: 1 }} className="anim-page-enter" key={view + (viewData || '')}>{renderView()}</main>
+      <main style={{ flex: 1 }} className="anim-page-enter" key={location.pathname}>
+        <Routes>
+          <Route path="/" element={<HomePage {...homeProps} />} />
+          <Route path="/practice-tests" element={<CategoriesPage onNavigate={nav} stats={stats} bp={bp} />} />
+          <Route path="/practice-tests/:categorySlug" element={<CategoryPageWrapper onNavigate={nav} stats={stats} bp={bp} />} />
+          <Route path="/quick-fire/:testId" element={<QuickFireWrapper onNavigate={nav} onComplete={onDone} bp={bp} gameState={gameState} />} />
+          <Route path="/smart-study/:testId" element={<SmartStudyWrapper onNavigate={nav} onComplete={onDone} bp={bp} gameState={gameState} recordAnswer={recordAnswer} getWeakQuestions={getWeakQuestions} mastery={mastery} />} />
+          <Route path="/progress" element={<ProgressPage stats={stats} onNavigate={nav} bp={bp} gameState={gameState} getMasteryStats={getMasteryStats} goalHook={goalHook} />} />
+          <Route path="/weak-areas" element={<WeakAreasPage onNavigate={nav} onComplete={onDone} bp={bp} gameState={gameState} getWeakQuestions={getWeakQuestions} recordAnswer={recordAnswer} />} />
+          <Route path="/:testSlug" element={<QuizPageWrapper {...quizProps} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
       <Footer bp={bp} />
     </div>
   );
