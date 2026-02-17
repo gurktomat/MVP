@@ -1,6 +1,18 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { testCategories, questionBank } from "./data/questions.js";
 import { useSEO, useAnalytics } from "./seo.jsx";
+import { useMastery } from "./hooks/useMastery.js";
+import { useGoal } from "./hooks/useGoal.js";
+import { MASTERY_LABELS, MASTERY_COLORS } from "./utils/sm2.js";
+import { MYSTERY_THRESHOLDS, MULTIPLIER_WEIGHTS, SPIN_SEGMENTS } from "./data/rewards.js";
+import { getContextualQuote } from "./data/quotes.js";
+import SpinWheel from "./components/SpinWheel.jsx";
+import { CelebrationOverlay } from "./components/Celebrations.jsx";
+import QuickFirePage from "./components/QuickFire.jsx";
+import SmartStudyPage from "./components/SmartStudy.jsx";
+import ShareCard from "./components/ShareCard.jsx";
+import OnboardingFlow from "./components/Onboarding.jsx";
+import WeakAreasPage from "./components/WeakAreas.jsx";
 import {
   Home, BookOpen, BarChart3, Sun, Moon, Flame, Sparkles, Trophy, Target, Zap,
   Clock, CheckCircle2, XCircle, ChevronRight, ArrowLeft, X, FileText, Award,
@@ -8,7 +20,7 @@ import {
   Compass, Rocket, Gem, Swords, Gauge, CircleDot, Info, Gift, Calendar,
   BookOpenCheck, GraduationCap, ClipboardList, MapPin, Timer, Percent,
   ArrowRight, Keyboard, RotateCcw, Play, Eye, Search, SlidersHorizontal,
-  Quote, ArrowUpRight, Hash, Minus
+  Quote, ArrowUpRight, Hash, Minus, Heart, RefreshCw, Share2, Copy
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════
@@ -120,7 +132,33 @@ const getLevel = (xp) => {
   return { ...LEVELS[0], index: 0, nextMin: LEVELS[1].min };
 };
 
-const INITIAL_GAME_STATE = { xp: 0, streak: 0, lastActiveDate: null, badges: [], dailyChallengeDate: null, dailyChallengeTestId: null, weekActivity: [] };
+const INITIAL_GAME_STATE = {
+  xp: 0, streak: 0, lastActiveDate: null, badges: [], dailyChallengeDate: null, dailyChallengeTestId: null, weekActivity: [],
+  // Streak Shields
+  streakShields: 0, shieldsEarned: 0, shieldUsedDates: [], lastStreakMilestone: 0,
+  // Variable Rewards
+  dailyMultiplier: 1, dailyMultiplierDate: null, mysteryBoxesClaimed: [], titles: [], activeTitle: null,
+  // Spin Wheel
+  lastSpinDate: null, lastSpinReward: null, spinsTotal: 0,
+  // Onboarding
+  onboardingComplete: false, selectedCategory: null,
+  // Completion tracking for today
+  quizCompletedToday: false, quizCompletedTodayDate: null,
+};
+
+/* ═══════════════════════════════════════════
+   DAILY MULTIPLIER (Variable Reward)
+   ═══════════════════════════════════════════ */
+const getDailyMultiplier = () => {
+  const seed = new Date().toDateString().split("").reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 0);
+  const totalWeight = MULTIPLIER_WEIGHTS.reduce((s, w) => s + w.weight, 0);
+  let roll = seed % totalWeight;
+  for (const m of MULTIPLIER_WEIGHTS) {
+    roll -= m.weight;
+    if (roll <= 0) return m;
+  }
+  return MULTIPLIER_WEIGHTS[0];
+};
 
 /* Category & test icon mapping (replaces data-file emoji with Lucide SVGs) */
 const CAT_ICONS = {
@@ -603,7 +641,7 @@ const Container = ({ children, bp, noPad }) => {
 /* ═══════════════════════════════════════════
    HOME PAGE
    ═══════════════════════════════════════════ */
-const HomePage = ({ onNavigate, bp, stats, gameState }) => {
+const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMasteryStats, dailyMultiplierInfo, onShowSpin }) => {
   const is4k = bp === "4k";
   const isDesktop = bp === "desktop" || is4k;
   const isTablet = bp === "tablet";
@@ -723,6 +761,136 @@ const HomePage = ({ onNavigate, bp, stats, gameState }) => {
                   </div>
                 </BentoCard>
               )}
+
+              {/* Daily Multiplier Card */}
+              {dailyMultiplierInfo && dailyMultiplierInfo.value > 1 && (
+                <BentoCard accent="var(--gradient-xp)">
+                  <div style={{ textAlign: "center", padding: "8px 0" }}>
+                    <div style={{
+                      fontSize: is4k ? 44 : 38, fontWeight: 900, fontFamily: "var(--font-heading)",
+                      background: "var(--gradient-accent)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      marginBottom: 4,
+                    }}>{dailyMultiplierInfo.label}</div>
+                    <p style={{ fontSize: 12, color: "var(--ink-muted)" }}>All XP earned today is multiplied!</p>
+                  </div>
+                </BentoCard>
+              )}
+
+              {/* Weak Areas Card */}
+              {dueCount > 0 && (
+                <BentoCard accent="var(--gradient-streak)">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <Brain size={20} style={{ color: "var(--warm)" }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--warm)" }}>Weak Areas</span>
+                  </div>
+                  <div style={{ fontSize: is4k ? 30 : 26, fontWeight: 800, fontFamily: "var(--font-heading)", color: "var(--warm)" }}>{dueCount}</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 12 }}>questions need review</div>
+                  <button onClick={() => onNavigate("weak-areas")} className="tap-target" style={{
+                    width: "100%", padding: "10px", borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "var(--warm)", color: "white", fontSize: 13, fontWeight: 600,
+                    fontFamily: "var(--font-body)",
+                  }}>Review Now →</button>
+                </BentoCard>
+              )}
+
+              {/* Goal Countdown Card */}
+              {goalHook.goal && !goalHook.goal.dismissed && goalHook.daysLeft !== null && (
+                <BentoCard accent={goalHook.urgency === "urgent" || goalHook.urgency === "critical" ? "var(--danger)" : "var(--gradient-accent)"}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <Calendar size={16} style={{ color: "var(--accent)" }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Test Day Goal</span>
+                  </div>
+                  <div style={{
+                    fontSize: is4k ? 36 : 30, fontWeight: 800, fontFamily: "var(--font-heading)",
+                    color: goalHook.urgency === "urgent" ? "var(--danger)" : goalHook.urgency === "alert" ? "var(--warm)" : "var(--accent)",
+                  }}>{goalHook.daysLeft}</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 6 }}>days until your test</div>
+                  <p style={{ fontSize: 11, color: "var(--ink-light)", lineHeight: 1.4 }}>
+                    {goalHook.getRecommendation(goalHook.getReadiness(stats, getMasteryStats))}
+                  </p>
+                </BentoCard>
+              )}
+
+              {/* Quick-Fire & Smart Study Buttons */}
+              <BentoCard span={isDesktop ? 2 : isTablet ? 2 : 1}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <button onClick={() => onNavigate("quick-fire", "car-permit")} className="tap-target hover-scale" style={{
+                    padding: "18px 12px", borderRadius: 14, border: "1.5px solid var(--danger)",
+                    background: "var(--danger-soft)", cursor: "pointer", textAlign: "center",
+                    fontFamily: "var(--font-body)", transition: "all 0.25s",
+                  }}>
+                    <Zap size={24} style={{ color: "var(--danger)", marginBottom: 6 }} />
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--danger)" }}>Quick-Fire</div>
+                    <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 2 }}>20 Qs • 15s each • 3 lives</div>
+                  </button>
+                  <button onClick={() => onNavigate("smart-study", "car-permit")} className="tap-target hover-scale" style={{
+                    padding: "18px 12px", borderRadius: 14, border: "1.5px solid var(--accent)",
+                    background: "var(--accent-soft)", cursor: "pointer", textAlign: "center",
+                    fontFamily: "var(--font-body)", transition: "all 0.25s",
+                  }}>
+                    <Brain size={24} style={{ color: "var(--accent)", marginBottom: 6 }} />
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)" }}>Smart Study</div>
+                    <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 2 }}>Adaptive • Infinite • Your pace</div>
+                  </button>
+                </div>
+              </BentoCard>
+
+              {/* Daily Spin Card */}
+              {gameState.quizCompletedToday && gameState.lastSpinDate !== new Date().toDateString() && (
+                <BentoCard accent="var(--badge-gold)">
+                  <div style={{ textAlign: "center", padding: "8px 0" }}>
+                    <Gift size={32} style={{ color: "var(--badge-gold)", marginBottom: 8, animation: "gentleBounce 2s ease-in-out infinite" }} />
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--badge-gold)", marginBottom: 4 }}>Daily Spin Available!</div>
+                    <p style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 12 }}>Spin the wheel for bonus rewards</p>
+                    <button onClick={onShowSpin} className="tap-target" style={{
+                      padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: "var(--badge-gold)", color: "#1a1a2e", fontSize: 13, fontWeight: 700,
+                      fontFamily: "var(--font-body)",
+                    }}>Spin Now! 🎡</button>
+                  </div>
+                </BentoCard>
+              )}
+
+              {/* Streak Shield indicator */}
+              {(gameState.streakShields || 0) > 0 && (
+                <BentoCard>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <Shield size={18} style={{ color: "var(--accent)" }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Streak Shields</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[0, 1, 2].map(i => (
+                      <div key={i} style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: i < (gameState.streakShields || 0) ? "var(--accent-soft)" : "var(--surface-sunken)",
+                        border: `1.5px solid ${i < (gameState.streakShields || 0) ? "var(--accent)" : "var(--border)"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Shield size={14} style={{ color: i < (gameState.streakShields || 0) ? "var(--accent)" : "var(--ink-muted)", opacity: i < (gameState.streakShields || 0) ? 1 : 0.3 }} />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 6 }}>Protect your streak on missed days</div>
+                </BentoCard>
+              )}
+
+              {/* Motivational Quote */}
+              {(() => {
+                const quote = getContextualQuote(gameState, stats[Object.keys(stats).pop()]?.lastScore);
+                return (
+                  <BentoCard span={isDesktop ? 2 : isTablet ? 2 : 1}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "start" }}>
+                      <Quote size={24} style={{ color: "var(--ink-muted)", flexShrink: 0, marginTop: 2 }} />
+                      <div>
+                        <p style={{ fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: is4k ? 17 : 15, lineHeight: 1.6, color: "var(--ink)", marginBottom: 6 }}>
+                          "{quote.text}"
+                        </p>
+                        <p style={{ fontSize: 12, color: "var(--ink-muted)" }}>— {quote.author}</p>
+                      </div>
+                    </div>
+                  </BentoCard>
+                );
+              })()}
 
               {/* Continue Practicing - span 2 or 3 */}
               <BentoCard span={isDesktop ? (recentBadge ? 3 : 4) : isTablet ? 2 : 1}>
@@ -1296,7 +1464,7 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
 /* ═══════════════════════════════════════════
    QUIZ PAGE
    ═══════════════════════════════════════════ */
-const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState }) => {
+const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswer, onShowShare }) => {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState(null);
   const [showExp, setShowExp] = useState(false);
@@ -1344,6 +1512,8 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState }) => {
     setShowExp(true);
     const isCorrect = i === questions[currentQ].correct;
     setAnswers([...answers, { qId: questions[currentQ].id, sel: i, cor: questions[currentQ].correct }]);
+    // Track mastery via spaced repetition
+    if (recordAnswer) recordAnswer(testId, questions[currentQ].id, isCorrect);
     if (isCorrect) {
       setXpEarned(prev => prev + XP_VALUES.correctAnswer);
       setShowXpFloat(true);
@@ -1482,6 +1652,35 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState }) => {
                 <button onClick={() => onNavigate("categories")} className="tap-target" style={{ flex: 1, padding: "15px 24px", borderRadius: 14, cursor: "pointer", background: "var(--surface-sunken)", color: "var(--ink)", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600, border: "1.5px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                   <BookOpen size={16} /> Other Tests
                 </button>
+              </div>
+              {/* Share & Weak Areas buttons */}
+              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                {onShowShare && (
+                  <button onClick={() => onShowShare({
+                    testName: testInfo?.name || testId,
+                    score, passed,
+                    streak: gameState?.streak || 0,
+                    level: getLevel(gameState?.xp || 0),
+                    xp: gameState?.xp || 0,
+                  })} className="tap-target" style={{
+                    flex: 1, padding: "12px 16px", borderRadius: 12, cursor: "pointer",
+                    background: "var(--accent-soft)", color: "var(--accent)",
+                    fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+                    border: "1px solid var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}>
+                    <Share2 size={14} /> Share Results
+                  </button>
+                )}
+                {answers.filter(a => a.sel !== a.cor).length > 0 && (
+                  <button onClick={() => onNavigate("weak-areas")} className="tap-target" style={{
+                    flex: 1, padding: "12px 16px", borderRadius: 12, cursor: "pointer",
+                    background: "var(--warm-soft)", color: "var(--warm)",
+                    fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+                    border: "1px solid var(--warm)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}>
+                    <Brain size={14} /> Practice Missed
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1635,7 +1834,7 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState }) => {
 /* ═══════════════════════════════════════════
    PROGRESS PAGE
    ═══════════════════════════════════════════ */
-const ProgressPage = ({ stats, onNavigate, bp, gameState }) => {
+const ProgressPage = ({ stats, onNavigate, bp, gameState, getMasteryStats, goalHook }) => {
   const all = testCategories.flatMap((c) => c.tests);
   const completed = all.filter((t) => stats[t.id]?.attempts > 0);
   const totalA = Object.values(stats).reduce((s, v) => s + (v.attempts || 0), 0);
@@ -1868,30 +2067,54 @@ export default function App() {
   const [gameState, setGameState] = useLocalStorage("ql-game", INITIAL_GAME_STATE);
   const { resolved: themeResolved, toggle: themeToggle } = useTheme();
   const { toasts, addToast } = useToasts();
+  const { mastery, recordAnswer, getWeakQuestions, getMasteryStats, getQuestionMastery, dueCount } = useMastery();
+  const goalHook = useGoal();
 
   const nav = useCallback((v, d = null) => { setView(v); setViewData(d); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   useSEO(view, viewData);
   useAnalytics(view, viewData);
 
-  // Update streak on app load
+  // Update streak on app load (with shield protection)
   useEffect(() => {
     const today = new Date().toDateString();
     if (gameState.lastActiveDate === today) return;
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     setGameState(prev => {
       const isConsecutive = prev.lastActiveDate === yesterday;
-      const newStreak = isConsecutive ? prev.streak + 1 : (prev.lastActiveDate === today ? prev.streak : 1);
+      let newStreak;
+      let newShields = prev.streakShields || 0;
+      const shieldUsedDates = [...(prev.shieldUsedDates || [])];
+
+      if (isConsecutive) {
+        newStreak = prev.streak + 1;
+      } else if (prev.lastActiveDate === today) {
+        newStreak = prev.streak;
+      } else if (prev.streak > 0 && newShields > 0 && prev.lastActiveDate) {
+        // Use a streak shield!
+        newStreak = prev.streak + 1;
+        newShields--;
+        shieldUsedDates.push(today);
+        setTimeout(() => addToast("Streak Shield used! Your streak is safe.", "streak"), 500);
+      } else {
+        newStreak = 1;
+      }
+
       const dayOfWeek = new Date().getDay();
       const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const newWeek = [...(prev.weekActivity || [])];
       if (!newWeek.includes(adjustedDay)) newWeek.push(adjustedDay);
-      // Reset week on Monday
       const isMonday = dayOfWeek === 1;
+
       return {
         ...prev,
         streak: newStreak,
         lastActiveDate: today,
         weekActivity: isMonday && prev.lastActiveDate !== today ? [adjustedDay] : newWeek,
+        streakShields: newShields,
+        shieldUsedDates,
+        // Update daily multiplier
+        dailyMultiplier: getDailyMultiplier().value,
+        dailyMultiplierDate: today,
       };
     });
   }, []);
@@ -1911,10 +2134,16 @@ export default function App() {
     }
   }, [addToast, setGameState]);
 
+  // Celebration state
+  const [celebration, setCelebration] = useState(null);
+  const [showSpinWheel, setShowSpinWheel] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(null);
+
   const onDone = useCallback((id, r) => {
     // Update stats
     const newStats = { ...stats };
     const e = newStats[id] || { attempts: 0, bestScore: 0, passed: false, history: [] };
+    const isFirstQuiz = Object.values(stats).every(v => !v.attempts || v.attempts === 0);
     newStats[id] = {
       attempts: e.attempts + 1,
       bestScore: Math.max(e.bestScore, r.score),
@@ -1925,8 +2154,10 @@ export default function App() {
     };
     setStats(newStats);
 
-    // Update XP and game state
-    const xpToAdd = r.xpEarned || 0;
+    // Apply daily multiplier to XP
+    const multiplier = gameState.dailyMultiplier || 1;
+    const baseXp = r.xpEarned || 0;
+    const xpToAdd = Math.round(baseXp * multiplier);
     const prevXp = gameState.xp || 0;
     const newXp = prevXp + xpToAdd;
     const prevLevel = getLevel(prevXp);
@@ -1935,31 +2166,106 @@ export default function App() {
     const isDailyChallenge = id === getDailyChallenge(gameState);
     const dailyBonus = isDailyChallenge && gameState.dailyChallengeDate !== new Date().toDateString() ? XP_VALUES.dailyChallenge : 0;
 
+    // Award streak shields at 7-day milestones
+    let newShields = gameState.streakShields || 0;
+    let newMilestone = gameState.lastStreakMilestone || 0;
+    const streak = gameState.streak || 0;
+    if (streak > 0 && streak % 7 === 0 && streak > newMilestone && newShields < 3) {
+      newShields = Math.min(3, newShields + 1);
+      newMilestone = streak;
+      setTimeout(() => addToast("Streak Shield earned! 🛡️", "streak"), 1200);
+    }
+
+    // Check mystery box thresholds
+    const claimedBoxes = [...(gameState.mysteryBoxesClaimed || [])];
+    const totalXpAfter = newXp + dailyBonus;
+    const newMysteryReward = MYSTERY_THRESHOLDS.find(t =>
+      totalXpAfter >= t.xp && !claimedBoxes.includes(t.xp)
+    );
+    if (newMysteryReward) {
+      claimedBoxes.push(newMysteryReward.xp);
+      setTimeout(() => addToast(`Mystery reward unlocked at ${newMysteryReward.xp} XP!`, "badge"), 2000);
+    }
+
+    const today = new Date().toDateString();
     const updatedGame = {
       ...gameState,
-      xp: newXp + dailyBonus,
-      dailyChallengeDate: isDailyChallenge ? new Date().toDateString() : gameState.dailyChallengeDate,
+      xp: totalXpAfter,
+      dailyChallengeDate: isDailyChallenge ? today : gameState.dailyChallengeDate,
       dailyChallengeTestId: isDailyChallenge ? id : gameState.dailyChallengeTestId,
+      streakShields: newShields,
+      lastStreakMilestone: newMilestone,
+      shieldsEarned: (gameState.shieldsEarned || 0) + (newShields > (gameState.streakShields || 0) ? 1 : 0),
+      mysteryBoxesClaimed: claimedBoxes,
+      quizCompletedToday: true,
+      quizCompletedTodayDate: today,
     };
     setGameState(updatedGame);
 
     // Toasts
-    if (xpToAdd > 0) addToast(`+${xpToAdd + dailyBonus} XP earned!`, "xp");
+    const xpMsg = multiplier > 1 ? `+${xpToAdd} XP earned! (${multiplier}× bonus)` : `+${xpToAdd + dailyBonus} XP earned!`;
+    if (xpToAdd > 0) addToast(xpMsg, "xp");
     if (isDailyChallenge && dailyBonus > 0) addToast(`Daily Challenge complete! +${dailyBonus} bonus XP`, "streak");
     if (newLevel.index > prevLevel.index) addToast(`Level up! You're now a ${newLevel.name}`, "levelup");
+
+    // Trigger celebrations
+    if (isFirstQuiz && r.passed) setTimeout(() => setCelebration({ type: "first-quiz" }), 600);
+    else if (r.score === 100) setTimeout(() => setCelebration({ type: "perfect-score" }), 600);
+    else if (newLevel.index > prevLevel.index) setTimeout(() => setCelebration({ type: "level-up", data: { levelName: newLevel.name } }), 600);
+
+    // Check streak celebrations
+    const streakMilestones = [3, 7, 14, 30];
+    for (const m of streakMilestones) {
+      if (streak === m) {
+        setTimeout(() => setCelebration({ type: `streak-${m}` }), 800);
+        break;
+      }
+    }
 
     // Check badges after a short delay
     setTimeout(() => checkBadges(newStats, updatedGame), 500);
   }, [stats, gameState, setStats, setGameState, addToast, checkBadges]);
 
+  // Handle spin wheel reward
+  const handleSpinReward = useCallback((reward) => {
+    setShowSpinWheel(false);
+    if (reward.type === "xp") {
+      setGameState(prev => ({ ...prev, xp: (prev.xp || 0) + reward.value }));
+      addToast(`+${reward.value} XP from Daily Spin!`, "xp");
+    } else if (reward.type === "shield") {
+      setGameState(prev => ({ ...prev, streakShields: Math.min(3, (prev.streakShields || 0) + 1) }));
+      addToast("Streak Shield earned from Daily Spin!", "streak");
+    } else if (reward.type === "multiplier") {
+      addToast("2× XP for your next quiz!", "xp");
+    } else if (reward.type === "badge") {
+      addToast("Special badge from Daily Spin!", "badge");
+    }
+    setGameState(prev => ({ ...prev, lastSpinDate: new Date().toDateString(), spinsTotal: (prev.spinsTotal || 0) + 1 }));
+  }, [addToast, setGameState]);
+
+  // Daily multiplier info
+  const dailyMultiplierInfo = getDailyMultiplier();
+
   const renderView = () => {
     switch (view) {
-      case "home": return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState} />;
+      case "home": return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState}
+        dueCount={dueCount} goalHook={goalHook} getMasteryStats={getMasteryStats}
+        dailyMultiplierInfo={dailyMultiplierInfo} onShowSpin={() => setShowSpinWheel(true)} />;
       case "categories": return <CategoriesPage onNavigate={nav} stats={stats} bp={bp} />;
       case "category": return <CategoryPage categoryId={viewData} onNavigate={nav} stats={stats} bp={bp} />;
-      case "quiz": return <QuizPage testId={viewData} onNavigate={nav} onComplete={onDone} bp={bp} gameState={gameState} />;
-      case "progress": return <ProgressPage stats={stats} onNavigate={nav} bp={bp} gameState={gameState} />;
-      default: return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState} />;
+      case "quiz": return <QuizPage testId={viewData} onNavigate={nav} onComplete={onDone} bp={bp}
+        gameState={gameState} recordAnswer={recordAnswer} onShowShare={setShowShareCard} />;
+      case "progress": return <ProgressPage stats={stats} onNavigate={nav} bp={bp} gameState={gameState}
+        getMasteryStats={getMasteryStats} goalHook={goalHook} />;
+      case "weak-areas": return <WeakAreasPage onNavigate={nav} onComplete={onDone} bp={bp}
+        gameState={gameState} getWeakQuestions={getWeakQuestions} recordAnswer={recordAnswer} />;
+      case "quick-fire": return <QuickFirePage testId={viewData} onNavigate={nav} onComplete={onDone}
+        bp={bp} gameState={gameState} />;
+      case "smart-study": return <SmartStudyPage testId={viewData} onNavigate={nav} onComplete={onDone}
+        bp={bp} gameState={gameState} recordAnswer={recordAnswer} getWeakQuestions={getWeakQuestions} mastery={mastery} />;
+      default: return <HomePage onNavigate={nav} bp={bp} stats={stats} gameState={gameState}
+        dueCount={dueCount} goalHook={goalHook} getMasteryStats={getMasteryStats}
+        dailyMultiplierInfo={dailyMultiplierInfo} onShowSpin={() => setShowSpinWheel(true)} />;
     }
   };
 
@@ -1970,6 +2276,11 @@ export default function App() {
       <GlobalStyles />
       <div className="grain" />
       <ToastContainer toasts={toasts} />
+
+      {/* Overlay components */}
+      {celebration && <CelebrationOverlay type={celebration.type} data={celebration.data} onDismiss={() => setCelebration(null)} />}
+      {showSpinWheel && <SpinWheel show={showSpinWheel} onClose={() => setShowSpinWheel(false)} onReward={handleSpinReward} gameState={gameState} />}
+      {showShareCard && <ShareCard {...showShareCard} onClose={() => setShowShareCard(null)} />}
 
       {bp === "mobile" && <MobileNav currentView={view} onNavigate={nav} {...navProps} />}
       {bp === "tablet" && <TabletSidebar currentView={view} onNavigate={nav} {...navProps} />}
