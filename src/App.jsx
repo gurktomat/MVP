@@ -143,7 +143,7 @@ const CatIcon = ({ catId, size = 24, style = {} }) => {
   return <entry.Icon size={size} style={{ color: entry.color, ...style }} />;
 };
 const TestIcon = ({ testId, size = 24, style = {} }) => {
-  const Icon = TEST_ICONS[testId] || BookOpen;
+  const Icon = testId.startsWith("dmv-") ? MapPin : (TEST_ICONS[testId] || BookOpen);
   return <Icon size={size} style={style} />;
 };
 
@@ -1078,10 +1078,121 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
   if (!cat) return null;
   const is4k = bp === "4k";
   const isDesktop = bp === "desktop" || is4k;
+  const isTablet = bp === "tablet";
   const completedCount = cat.tests.filter(t => stats[t.id]?.attempts > 0).length;
+
+  // Separate state DMV tests from general tests
+  const isStateDmv = (test) => test.id.startsWith("dmv-");
+  const generalTests = cat.tests.filter(t => !isStateDmv(t));
+  const stateTests = cat.tests.filter(t => isStateDmv(t));
+  const hasStateTests = stateTests.length > 0;
+
+  // Search & filter for categories with many tests
+  const [stateSearch, setStateSearch] = useState("");
+  const [stateFilter, setStateFilter] = useState("all"); // "all", "completed", "not-started"
+
+  const filteredStateTests = useMemo(() => {
+    let filtered = stateTests;
+    if (stateSearch.trim()) {
+      const q = stateSearch.toLowerCase();
+      filtered = filtered.filter(t => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+    }
+    if (stateFilter === "completed") filtered = filtered.filter(t => stats[t.id]?.attempts > 0);
+    if (stateFilter === "not-started") filtered = filtered.filter(t => !stats[t.id]?.attempts);
+    return filtered;
+  }, [stateTests, stateSearch, stateFilter, stats]);
+
+  // Full-size test card (used for general tests)
+  const TestCard = ({ test, i }) => {
+    const ts = stats[test.id]; const attempts = ts?.attempts || 0; const best = ts?.bestScore || 0;
+    const passed = best >= test.passingScore;
+    return (
+      <div key={test.id} className={`anim-fade-up anim-d${Math.min(i + 2, 6)}`} style={{
+        background: "var(--surface-raised)", borderRadius: 18, padding: is4k ? 28 : 22,
+        border: `1.5px solid ${attempts > 0 && passed ? "var(--success)" : "var(--border)"}`,
+        position: "relative",
+      }}>
+        {attempts > 0 && passed && <div style={{ position: "absolute", top: 12, right: 12 }}><CheckCircle2 size={18} style={{ color: "var(--success)" }} /></div>}
+        <div style={{ display: "flex", flexDirection: bp === "mobile" ? "column" : "row", justifyContent: "space-between", alignItems: bp === "mobile" ? "stretch" : "center", gap: 16 }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "start" }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: `linear-gradient(135deg, ${cat.accent}12, ${cat.accent}06)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: `1px solid ${cat.accent}18`,
+            }}>
+              <TestIcon testId={test.id} size={is4k ? 24 : 20} style={{ color: cat.accent }} />
+            </div>
+            <div>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 20 : 17, marginBottom: 5 }}>{test.name}</h3>
+              <p style={{ fontSize: 13, color: "var(--ink-muted)", marginBottom: 10, lineHeight: 1.5 }}>{test.description}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {[{ label: `${test.questionCount} Qs`, Icon: Hash }, { label: `${test.timeLimit} min`, Icon: Clock }, { label: `${test.passingScore}% to pass`, Icon: Target }].map((tag, j) => (
+                  <span key={j} style={{ fontSize: 12, fontWeight: 500, background: "var(--surface-sunken)", color: "var(--ink-light)", padding: "4px 10px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <tag.Icon size={11} /> {tag.label}
+                  </span>
+                ))}
+                {attempts > 0 && <span style={{ fontSize: 12, fontWeight: 600, background: passed ? "var(--success-soft)" : "var(--warm-soft)", color: passed ? "var(--success)" : "var(--warm)", padding: "4px 10px", borderRadius: 8 }}>Best: {best}%</span>}
+              </div>
+            </div>
+          </div>
+          <button onClick={() => onNavigate("quiz", test.id)} className="tap-target" style={{
+            padding: "12px 24px", borderRadius: 12, cursor: "pointer",
+            background: attempts > 0 ? "var(--surface-sunken)" : "var(--ink)", color: attempts > 0 ? "var(--ink)" : "white",
+            fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
+            flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
+            border: attempts > 0 ? "1.5px solid var(--border)" : "none",
+          }}>{attempts > 0 ? <><RotateCcw size={14} /> Retry</> : <><Play size={14} /> Start</>}</button>
+        </div>
+      </div>
+    );
+  };
+
+  // Compact state test card (grid layout for 50 states)
+  const StateTestCard = ({ test }) => {
+    const ts = stats[test.id]; const attempts = ts?.attempts || 0; const best = ts?.bestScore || 0;
+    const passed = best >= test.passingScore;
+    const stateAbbr = test.id.replace("dmv-", "").toUpperCase();
+    return (
+      <button key={test.id} onClick={() => onNavigate("quiz", test.id)}
+        className="tap-target hover-lift" style={{
+          textAlign: "left", padding: is4k ? 20 : 16, borderRadius: 16, cursor: "pointer",
+          background: "var(--surface-raised)",
+          border: `1.5px solid ${attempts > 0 && passed ? "var(--success)" : "var(--border)"}`,
+          transition: "all 0.25s ease", position: "relative", fontFamily: "var(--font-body)",
+        }}>
+        {attempts > 0 && passed && <div style={{ position: "absolute", top: 8, right: 8 }}><CheckCircle2 size={14} style={{ color: "var(--success)" }} /></div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: `linear-gradient(135deg, ${cat.accent}15, ${cat.accent}08)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: `1px solid ${cat.accent}20`,
+            fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, color: cat.accent,
+          }}>{stateAbbr}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h4 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 16 : 14, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{test.name}</h4>
+            <p style={{ fontSize: 12, color: "var(--ink-muted)", lineHeight: 1.3, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{test.questionCount} Qs · {test.passingScore}% to pass</p>
+          </div>
+        </div>
+        {attempts > 0 && (
+          <div style={{ display: "flex", gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, background: passed ? "var(--success-soft)" : "var(--warm-soft)", color: passed ? "var(--success)" : "var(--warm)", padding: "2px 8px", borderRadius: 6 }}>Best: {best}%</span>
+            <span style={{ fontSize: 11, fontWeight: 500, background: "var(--surface-sunken)", color: "var(--ink-light)", padding: "2px 8px", borderRadius: 6 }}>{attempts} taken</span>
+          </div>
+        )}
+        {attempts === 0 && (
+          <span style={{ fontSize: 12, fontWeight: 600, color: cat.accent, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <Play size={11} /> Start test
+          </span>
+        )}
+      </button>
+    );
+  };
+
   return (
     <Container bp={bp}>
-      <div style={{ maxWidth: is4k ? 900 : 740, padding: isDesktop ? "40px 0 80px" : "20px 0 100px" }}>
+      <div style={{ maxWidth: hasStateTests ? (is4k ? 1200 : 1000) : (is4k ? 900 : 740), padding: isDesktop ? "40px 0 80px" : "20px 0 100px" }}>
         <button onClick={() => onNavigate("categories")} className="tap-target anim-fade-up focus-ring" style={{
           background: "none", border: "none", cursor: "pointer", fontSize: 14,
           color: "var(--ink-muted)", marginBottom: 24, fontFamily: "var(--font-body)",
@@ -1116,52 +1227,67 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
           )}
         </div>
 
-        <div style={{ display: "grid", gap: 12 }}>
-          {cat.tests.map((test, i) => {
-            const ts = stats[test.id]; const attempts = ts?.attempts || 0; const best = ts?.bestScore || 0;
-            const passed = best >= test.passingScore;
-            return (
-              <div key={test.id} className={`anim-fade-up anim-d${Math.min(i + 2, 6)}`} style={{
-                background: "var(--surface-raised)", borderRadius: 18, padding: is4k ? 28 : 22,
-                border: `1.5px solid ${attempts > 0 && passed ? "var(--success)" : "var(--border)"}`,
-                position: "relative",
-              }}>
-                {attempts > 0 && passed && <div style={{ position: "absolute", top: 12, right: 12 }}><CheckCircle2 size={18} style={{ color: "var(--success)" }} /></div>}
-                <div style={{ display: "flex", flexDirection: bp === "mobile" ? "column" : "row", justifyContent: "space-between", alignItems: bp === "mobile" ? "stretch" : "center", gap: 16 }}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "start" }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${cat.accent}12, ${cat.accent}06)`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      border: `1px solid ${cat.accent}18`,
-                    }}>
-                      <TestIcon testId={test.id} size={is4k ? 24 : 20} style={{ color: cat.accent }} />
-                    </div>
-                    <div>
-                      <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 20 : 17, marginBottom: 5 }}>{test.name}</h3>
-                      <p style={{ fontSize: 13, color: "var(--ink-muted)", marginBottom: 10, lineHeight: 1.5 }}>{test.description}</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        {[{ label: `${test.questionCount} Qs`, Icon: Hash }, { label: `${test.timeLimit} min`, Icon: Clock }, { label: `${test.passingScore}% to pass`, Icon: Target }].map((tag, j) => (
-                          <span key={j} style={{ fontSize: 12, fontWeight: 500, background: "var(--surface-sunken)", color: "var(--ink-light)", padding: "4px 10px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <tag.Icon size={11} /> {tag.label}
-                          </span>
-                        ))}
-                        {attempts > 0 && <span style={{ fontSize: 12, fontWeight: 600, background: passed ? "var(--success-soft)" : "var(--warm-soft)", color: passed ? "var(--success)" : "var(--warm)", padding: "4px 10px", borderRadius: 8 }}>Best: {best}%</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => onNavigate("quiz", test.id)} className="tap-target" style={{
-                    padding: "12px 24px", borderRadius: 12, cursor: "pointer",
-                    background: attempts > 0 ? "var(--surface-sunken)" : "var(--ink)", color: attempts > 0 ? "var(--ink)" : "white",
-                    fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
-                    flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
-                    border: attempts > 0 ? "1.5px solid var(--border)" : "none",
-                  }}>{attempts > 0 ? <><RotateCcw size={14} /> Retry</> : <><Play size={14} /> Start</>}</button>
-                </div>
+        {/* General Tests Section */}
+        {generalTests.length > 0 && (
+          <>
+            {hasStateTests && <h2 className="anim-fade-up anim-d2" style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 22 : 18, marginBottom: 12, marginTop: 8 }}>General Tests</h2>}
+            <div style={{ display: "grid", gap: 12, marginBottom: hasStateTests ? 32 : 0 }}>
+              {generalTests.map((test, i) => <TestCard key={test.id} test={test} i={i} />)}
+            </div>
+          </>
+        )}
+
+        {/* State Tests Section (for categories with 50+ state-specific tests) */}
+        {hasStateTests && (
+          <>
+            <div className="anim-fade-up anim-d3" style={{ display: "flex", justifyContent: "space-between", alignItems: bp === "mobile" ? "stretch" : "center", flexDirection: bp === "mobile" ? "column" : "row", gap: 12, marginBottom: 16 }}>
+              <div>
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 22 : 18, display: "flex", alignItems: "center", gap: 8 }}>
+                  <MapPin size={18} style={{ color: cat.accent }} /> State Practice Tests
+                </h2>
+                <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 2 }}>{stateTests.length} states · {stateTests.filter(t => stats[t.id]?.attempts > 0).length} completed</p>
               </div>
-            );
-          })}
-        </div>
+              {/* Search within states */}
+              <div style={{ position: "relative", width: bp === "mobile" ? "100%" : is4k ? 280 : 220 }}>
+                <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ink-muted)", pointerEvents: "none" }} />
+                <input type="search" placeholder="Search states..." value={stateSearch} onChange={(e) => setStateSearch(e.target.value)} className="focus-ring" style={{
+                  width: "100%", padding: "9px 12px 9px 34px", borderRadius: 10, border: "1.5px solid var(--border)",
+                  background: "var(--surface-raised)", color: "var(--ink)", fontFamily: "var(--font-body)", fontSize: 13, outline: "none",
+                }} />
+              </div>
+            </div>
+
+            {/* Filter tabs */}
+            <div className="anim-fade-up anim-d4" style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+              {[{ key: "all", label: "All States" }, { key: "not-started", label: "Not Started" }, { key: "completed", label: "Completed" }].map(f => (
+                <button key={f.key} onClick={() => setStateFilter(f.key)} style={{
+                  padding: "6px 14px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                  fontFamily: "var(--font-body)", border: "1.5px solid",
+                  borderColor: stateFilter === f.key ? cat.accent : "var(--border)",
+                  background: stateFilter === f.key ? `${cat.accent}15` : "var(--surface-raised)",
+                  color: stateFilter === f.key ? cat.accent : "var(--ink-muted)",
+                  transition: "all 0.2s",
+                }}>{f.label}</button>
+              ))}
+            </div>
+
+            {/* State test grid */}
+            {filteredStateTests.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px 0" }}>
+                <Search size={32} style={{ color: "var(--ink-muted)", marginBottom: 12, opacity: 0.4 }} />
+                <p style={{ fontSize: 14, color: "var(--ink-muted)" }}>No states match your search</p>
+              </div>
+            ) : (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: is4k ? "repeat(4, 1fr)" : isDesktop ? "repeat(3, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(2, 1fr)",
+                gap: is4k ? 14 : 10,
+              }}>
+                {filteredStateTests.map(test => <StateTestCard key={test.id} test={test} />)}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </Container>
   );

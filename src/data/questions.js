@@ -2,6 +2,8 @@
    QUIZLANE — COMPLETE QUESTION BANK
    ═══════════════════════════════════════════ */
 
+import { dmvStateQuestions } from "./dmv-states.js";
+
 export const testCategories = [
   {
     id: "driving", name: "Driving License", icon: "🚗",
@@ -12,6 +14,57 @@ export const testCategories = [
       { id: "car-permit", name: "Car Permit Test", icon: "🚙", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Practice for your DMV written knowledge test" },
       { id: "motorcycle", name: "Motorcycle Permit", icon: "🏍️", questionCount: 25, passingScore: 80, timeLimit: 25, description: "Motorcycle endorsement knowledge test" },
       { id: "cdl", name: "CDL General Knowledge", icon: "🚛", questionCount: 25, passingScore: 80, timeLimit: 30, description: "Commercial Driver License general knowledge" },
+      // ── 50 State-Specific DMV Tests ──
+      { id: "dmv-al", name: "Alabama DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Alabama driver license practice test", stateAbbrev: "AL" },
+      { id: "dmv-ak", name: "Alaska DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Alaska driver license practice test", stateAbbrev: "AK" },
+      { id: "dmv-az", name: "Arizona DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Arizona driver license practice test", stateAbbrev: "AZ" },
+      { id: "dmv-ar", name: "Arkansas DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Arkansas driver license practice test", stateAbbrev: "AR" },
+      { id: "dmv-ca", name: "California DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "California driver license practice test", stateAbbrev: "CA" },
+      { id: "dmv-co", name: "Colorado DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Colorado driver license practice test", stateAbbrev: "CO" },
+      { id: "dmv-ct", name: "Connecticut DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Connecticut driver license practice test", stateAbbrev: "CT" },
+      { id: "dmv-de", name: "Delaware DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Delaware driver license practice test", stateAbbrev: "DE" },
+      { id: "dmv-fl", name: "Florida DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Florida driver license practice test", stateAbbrev: "FL" },
+      { id: "dmv-ga", name: "Georgia DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Georgia driver license practice test", stateAbbrev: "GA" },
+      { id: "dmv-hi", name: "Hawaii DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Hawaii driver license practice test", stateAbbrev: "HI" },
+      { id: "dmv-id", name: "Idaho DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Idaho driver license practice test", stateAbbrev: "ID" },
+      { id: "dmv-il", name: "Illinois DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Illinois driver license practice test", stateAbbrev: "IL" },
+      { id: "dmv-in", name: "Indiana DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Indiana driver license practice test", stateAbbrev: "IN" },
+      { id: "dmv-ia", name: "Iowa DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Iowa driver license practice test", stateAbbrev: "IA" },
+      { id: "dmv-ks", name: "Kansas DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Kansas driver license practice test", stateAbbrev: "KS" },
+      { id: "dmv-ky", name: "Kentucky DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Kentucky driver license practice test", stateAbbrev: "KY" },
+      { id: "dmv-la", name: "Louisiana DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Louisiana driver license practice test", stateAbbrev: "LA" },
+      { id: "dmv-me", name: "Maine DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Maine driver license practice test", stateAbbrev: "ME" },
+      { id: "dmv-md", name: "Maryland DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Maryland driver license practice test", stateAbbrev: "MD" },
+      { id: "dmv-ma", name: "Massachusetts DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Massachusetts driver license practice test", stateAbbrev: "MA" },
+      { id: "dmv-mi", name: "Michigan DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Michigan driver license practice test", stateAbbrev: "MI" },
+      { id: "dmv-mn", name: "Minnesota DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Minnesota driver license practice test", stateAbbrev: "MN" },
+      { id: "dmv-ms", name: "Mississippi DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Mississippi driver license practice test", stateAbbrev: "MS" },
+      { id: "dmv-mo", name: "Missouri DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Missouri driver license practice test", stateAbbrev: "MO" },
+      { id: "dmv-mt", name: "Montana DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Montana driver license practice test", stateAbbrev: "MT" },
+      { id: "dmv-ne", name: "Nebraska DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Nebraska driver license practice test", stateAbbrev: "NE" },
+      { id: "dmv-nv", name: "Nevada DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Nevada driver license practice test", stateAbbrev: "NV" },
+      { id: "dmv-nh", name: "New Hampshire DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "New Hampshire driver license practice test", stateAbbrev: "NH" },
+      { id: "dmv-nj", name: "New Jersey DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "New Jersey driver license practice test", stateAbbrev: "NJ" },
+      { id: "dmv-nm", name: "New Mexico DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "New Mexico driver license practice test", stateAbbrev: "NM" },
+      { id: "dmv-ny", name: "New York DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "New York driver license practice test", stateAbbrev: "NY" },
+      { id: "dmv-nc", name: "North Carolina DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "North Carolina driver license practice test", stateAbbrev: "NC" },
+      { id: "dmv-nd", name: "North Dakota DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "North Dakota driver license practice test", stateAbbrev: "ND" },
+      { id: "dmv-oh", name: "Ohio DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Ohio driver license practice test", stateAbbrev: "OH" },
+      { id: "dmv-ok", name: "Oklahoma DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Oklahoma driver license practice test", stateAbbrev: "OK" },
+      { id: "dmv-or", name: "Oregon DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Oregon driver license practice test", stateAbbrev: "OR" },
+      { id: "dmv-pa", name: "Pennsylvania DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Pennsylvania driver license practice test", stateAbbrev: "PA" },
+      { id: "dmv-ri", name: "Rhode Island DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Rhode Island driver license practice test", stateAbbrev: "RI" },
+      { id: "dmv-sc", name: "South Carolina DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "South Carolina driver license practice test", stateAbbrev: "SC" },
+      { id: "dmv-sd", name: "South Dakota DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "South Dakota driver license practice test", stateAbbrev: "SD" },
+      { id: "dmv-tn", name: "Tennessee DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Tennessee driver license practice test", stateAbbrev: "TN" },
+      { id: "dmv-tx", name: "Texas DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Texas driver license practice test", stateAbbrev: "TX" },
+      { id: "dmv-ut", name: "Utah DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Utah driver license practice test", stateAbbrev: "UT" },
+      { id: "dmv-vt", name: "Vermont DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Vermont driver license practice test", stateAbbrev: "VT" },
+      { id: "dmv-va", name: "Virginia DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Virginia driver license practice test", stateAbbrev: "VA" },
+      { id: "dmv-wa", name: "Washington DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Washington driver license practice test", stateAbbrev: "WA" },
+      { id: "dmv-wv", name: "West Virginia DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "West Virginia driver license practice test", stateAbbrev: "WV" },
+      { id: "dmv-wi", name: "Wisconsin DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Wisconsin driver license practice test", stateAbbrev: "WI" },
+      { id: "dmv-wy", name: "Wyoming DMV", icon: "🚗", questionCount: 40, passingScore: 80, timeLimit: 30, description: "Wyoming driver license practice test", stateAbbrev: "WY" },
     ],
   },
   {
@@ -71,6 +124,8 @@ export const testCategories = [
 ];
 
 export const questionBank = {
+  // ── 50 State DMV Questions (imported from dmv-states.js) ──
+  ...dmvStateQuestions,
   /* ═══════════════════════════════════════════
      CAR PERMIT — 40 Questions
      ═══════════════════════════════════════════ */
