@@ -1481,9 +1481,18 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswer,
   const allQuestions = questionBank[testId] || questionBank["car-permit"].slice(0, 10);
   const [questions] = useState(() => {
     const count = testInfo?.questionCount || allQuestions.length;
-    if (allQuestions.length <= count) return allQuestions;
+    // Always shuffle question order
     const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
+    const selected = shuffled.slice(0, count);
+    // Shuffle answer options within each question (tracking correct answer)
+    return selected.map(q => {
+      const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+      return {
+        ...q,
+        options: indices.map(i => q.options[i]),
+        correct: indices.indexOf(q.correct),
+      };
+    });
   });
   const is4k = bp === "4k";
   const isDesktop = bp === "desktop" || is4k;

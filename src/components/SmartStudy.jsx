@@ -5,6 +5,13 @@ import { questionBank, testCategories } from "../data/questions.js";
 /* -----------------------------------------------
    Constants & helpers
    ----------------------------------------------- */
+// Shuffle answer options within a question, updating correct index
+const shuffleOptions = (q) => {
+  if (!q) return q;
+  const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+  return { ...q, options: indices.map(i => q.options[i]), correct: indices.indexOf(q.correct) };
+};
+
 const MASTERY_COLORS = ["var(--ink-muted)", "var(--warm)", "var(--accent)", "var(--success)"];
 const MASTERY_LABELS = ["New", "Learning", "Familiar", "Mastered"];
 const DIFFICULTY_LABELS = ["Easy", "Medium", "Hard"];
@@ -99,7 +106,7 @@ const SmartStudy = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswe
   // Pick first question
   useEffect(() => {
     const { question, difficulty: d } = pickQuestion(allQuestions, mastery, testId, 0, 0, new Set());
-    setCurrentQ(question);
+    setCurrentQ(shuffleOptions(question));
     setDifficulty(d);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -145,7 +152,7 @@ const SmartStudy = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswe
       return;
     }
 
-    setCurrentQ(question);
+    setCurrentQ(shuffleOptions(question));
     setDifficulty(d);
     setSelected(null);
     setShowExp(false);

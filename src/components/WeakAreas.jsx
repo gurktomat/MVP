@@ -15,10 +15,13 @@ const WeakAreas = ({ onNavigate, onComplete, bp, gameState, getWeakQuestions, re
   const is4k = bp === "4k";
   const isDesktop = bp === "desktop" || is4k;
 
-  // Pull weak questions once
+  // Pull weak questions once, shuffle option order
   const [questions] = useState(() => {
     const weak = getWeakQuestions?.(15) || [];
-    return weak;
+    return weak.map(q => {
+      const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+      return { ...q, options: indices.map(i => q.options[i]), correct: indices.indexOf(q.correct) };
+    });
   });
 
   const [currentQ, setCurrentQ] = useState(0);

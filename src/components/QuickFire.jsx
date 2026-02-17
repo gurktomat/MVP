@@ -57,7 +57,12 @@ const QuickFire = ({ testId, onNavigate, onComplete, bp, gameState }) => {
 
   const [questions] = useState(() => {
     const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, MAX_QUESTIONS);
+    const selected = shuffled.slice(0, MAX_QUESTIONS);
+    // Shuffle answer options within each question
+    return selected.map(q => {
+      const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+      return { ...q, options: indices.map(i => q.options[i]), correct: indices.indexOf(q.correct) };
+    });
   });
 
   const [currentQ, setCurrentQ] = useState(0);
