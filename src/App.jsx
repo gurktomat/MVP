@@ -902,8 +902,8 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => onNavigate("categories")} className="tap-target" style={{
                       padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer",
-                      background: "var(--ink)", color: "var(--surface)", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600,
-                      transition: "transform 0.2s", boxShadow: "var(--shadow-md)",
+                      background: "var(--accent)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600,
+                      transition: "transform 0.2s", boxShadow: "0 4px 16px rgba(37,99,235,0.25)",
                     }}>All Tests →</button>
                     <button onClick={() => onNavigate("progress")} className="tap-target" style={{
                       padding: "12px 24px", borderRadius: 12, cursor: "pointer",
@@ -1306,7 +1306,7 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
           </div>
           <button onClick={() => onNavigate("quiz", test.id)} className="tap-target" style={{
             padding: "12px 24px", borderRadius: 12, cursor: "pointer",
-            background: attempts > 0 ? "var(--surface-sunken)" : "var(--ink)", color: attempts > 0 ? "var(--ink)" : "white",
+            background: attempts > 0 ? "var(--surface-sunken)" : "var(--accent)", color: attempts > 0 ? "var(--ink)" : "#fff",
             fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
             flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
             border: attempts > 0 ? "1.5px solid var(--border)" : "none",
@@ -1646,7 +1646,7 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswer,
               )}
               <div style={{ display: "flex", gap: 12, flexDirection: bp === "mobile" ? "column" : "row" }}>
                 <button onClick={() => { setCurrentQ(0); setSelected(null); setShowExp(false); setAnswers([]); setDone(false); setXpEarned(0); setTimeLeft(testInfo ? testInfo.timeLimit * 60 : 1500); }}
-                  className="tap-target" style={{ flex: 1, padding: "15px 24px", borderRadius: 14, border: "none", cursor: "pointer", background: passed ? "var(--gradient-accent)" : "var(--ink)", color: "white", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: passed ? "0 4px 16px rgba(37,99,235,0.25)" : "none" }}>
+                  className="tap-target" style={{ flex: 1, padding: "15px 24px", borderRadius: 14, border: "none", cursor: "pointer", background: "var(--gradient-accent)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(37,99,235,0.25)" }}>
                   <RotateCcw size={16} /> Try Again
                 </button>
                 <button onClick={() => onNavigate("categories")} className="tap-target" style={{ flex: 1, padding: "15px 24px", borderRadius: 14, cursor: "pointer", background: "var(--surface-sunken)", color: "var(--ink)", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600, border: "1.5px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
@@ -1817,9 +1817,9 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswer,
         {showExp && (
           <button onClick={next} className="tap-target anim-fade-up" style={{
             width: "100%", padding: "16px", borderRadius: 14, border: "none", cursor: "pointer",
-            background: currentQ < questions.length - 1 ? "var(--ink)" : "var(--gradient-accent)",
-            color: "white", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600,
-            boxShadow: currentQ >= questions.length - 1 ? "0 4px 20px var(--accent-glow)" : "none",
+            background: "var(--accent)", color: "#fff",
+            fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600,
+            boxShadow: "0 4px 16px rgba(37,99,235,0.25)",
             transition: "transform 0.2s, box-shadow 0.2s",
           }}>
             {currentQ < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={16} style={{ marginLeft: 4, verticalAlign: "middle" }} />
