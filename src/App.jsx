@@ -220,7 +220,7 @@ const GlobalStyles = () => (
       --font-body: 'Inter', system-ui, sans-serif;
       --ink: #1a1a2e;
       --ink-light: #4a4a6a;
-      --ink-muted: #8888a4;
+      --ink-muted: #6b6b86;
       --surface: #fafaf8;
       --surface-raised: #ffffff;
       --surface-sunken: #f0f0ec;
@@ -260,7 +260,7 @@ const GlobalStyles = () => (
     [data-theme="dark"] {
       --ink: #e8e8f0;
       --ink-light: #a0a0b8;
-      --ink-muted: #6b6b82;
+      --ink-muted: #8888a4;
       --surface: #0f0f17;
       --surface-raised: #1a1a27;
       --surface-sunken: #0a0a12;
@@ -268,24 +268,24 @@ const GlobalStyles = () => (
       --surface-glass: rgba(26,26,39,0.6);
       --border: #2a2a3c;
       --border-light: #222233;
-      --accent: #3b82f6;
-      --accent-soft: rgba(59,130,246,0.12);
-      --accent-glow: rgba(59,130,246,0.2);
-      --success: #22c55e;
-      --success-soft: rgba(34,197,94,0.12);
-      --danger: #ef4444;
-      --danger-soft: rgba(239,68,68,0.12);
-      --warm: #f59e0b;
-      --warm-soft: rgba(245,158,11,0.1);
-      --xp-violet: #a78bfa;
-      --xp-violet-soft: rgba(167,139,250,0.12);
-      --streak-orange: #fb923c;
-      --streak-orange-soft: rgba(251,146,60,0.12);
-      --badge-gold: #facc15;
-      --badge-gold-soft: rgba(250,204,21,0.1);
-      --gradient-accent: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      --gradient-streak: linear-gradient(135deg, #fb923c, #f97316);
-      --gradient-xp: linear-gradient(135deg, #a78bfa, #8b5cf6);
+      --accent: #60a5fa;
+      --accent-soft: rgba(96,165,250,0.14);
+      --accent-glow: rgba(96,165,250,0.22);
+      --success: #4ade80;
+      --success-soft: rgba(74,222,128,0.12);
+      --danger: #f87171;
+      --danger-soft: rgba(248,113,113,0.12);
+      --warm: #fbbf24;
+      --warm-soft: rgba(251,191,36,0.1);
+      --xp-violet: #c4b5fd;
+      --xp-violet-soft: rgba(196,181,253,0.12);
+      --streak-orange: #fdba74;
+      --streak-orange-soft: rgba(253,186,116,0.12);
+      --badge-gold: #fde047;
+      --badge-gold-soft: rgba(253,224,71,0.1);
+      --gradient-accent: linear-gradient(135deg, #2563eb, #7c3aed);
+      --gradient-streak: linear-gradient(135deg, #fdba74, #fb923c);
+      --gradient-xp: linear-gradient(135deg, #c4b5fd, #a78bfa);
       --gradient-hero: linear-gradient(180deg, #0f0f17 0%, #0a0a12 100%);
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
       --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
@@ -707,7 +707,7 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                 <p style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 14 }}>+{XP_VALUES.dailyChallenge} bonus XP</p>
                 <button onClick={() => onNavigate("quiz", dailyTestId)} className="tap-target" style={{
                   width: "100%", padding: "10px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: "var(--accent)", color: "white", fontSize: 13, fontWeight: 600,
+                  background: "var(--gradient-accent)", color: "#fff", fontSize: 13, fontWeight: 600,
                   fontFamily: "var(--font-body)", transition: "transform 0.2s",
                 }}>Take Challenge →</button>
               </BentoCard>
@@ -787,7 +787,7 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                   <div style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 12 }}>questions need review</div>
                   <button onClick={() => onNavigate("weak-areas")} className="tap-target" style={{
                     width: "100%", padding: "10px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "var(--warm)", color: "white", fontSize: 13, fontWeight: 600,
+                    background: "var(--gradient-streak)", color: "#fff", fontSize: 13, fontWeight: 600,
                     fontFamily: "var(--font-body)",
                   }}>Review Now →</button>
                 </BentoCard>
@@ -844,7 +844,7 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                     <p style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 12 }}>Spin the wheel for bonus rewards</p>
                     <button onClick={onShowSpin} className="tap-target" style={{
                       padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: "var(--badge-gold)", color: "#1a1a2e", fontSize: 13, fontWeight: 700,
+                      background: "var(--badge-gold)", color: "var(--surface)", fontSize: 13, fontWeight: 700,
                       fontFamily: "var(--font-body)",
                     }}>Spin Now! 🎡</button>
                   </div>
@@ -902,7 +902,7 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => onNavigate("categories")} className="tap-target" style={{
                       padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer",
-                      background: "var(--accent)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600,
+                      background: "var(--gradient-accent)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600,
                       transition: "transform 0.2s", boxShadow: "0 4px 16px rgba(37,99,235,0.25)",
                     }}>All Tests →</button>
                     <button onClick={() => onNavigate("progress")} className="tap-target" style={{
@@ -1306,7 +1306,7 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
           </div>
           <button onClick={() => onNavigate("quiz", test.id)} className="tap-target" style={{
             padding: "12px 24px", borderRadius: 12, cursor: "pointer",
-            background: attempts > 0 ? "var(--surface-sunken)" : "var(--accent)", color: attempts > 0 ? "var(--ink)" : "#fff",
+            background: attempts > 0 ? "var(--surface-sunken)" : "var(--gradient-accent)", color: attempts > 0 ? "var(--ink)" : "#fff",
             fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
             flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
             border: attempts > 0 ? "1.5px solid var(--border)" : "none",
@@ -1817,7 +1817,7 @@ const QuizPage = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswer,
         {showExp && (
           <button onClick={next} className="tap-target anim-fade-up" style={{
             width: "100%", padding: "16px", borderRadius: 14, border: "none", cursor: "pointer",
-            background: "var(--accent)", color: "#fff",
+            background: "var(--gradient-accent)", color: "#fff",
             fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600,
             boxShadow: "0 4px 16px rgba(37,99,235,0.25)",
             transition: "transform 0.2s, box-shadow 0.2s",

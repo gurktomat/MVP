@@ -570,7 +570,7 @@ const SmartStudy = ({ testId, onNavigate, onComplete, bp, gameState, recordAnswe
             <button onClick={next} className="anim-fade-up" style={{
               width: "100%", padding: "16px", borderRadius: 14,
               border: "none", cursor: "pointer",
-              background: "var(--accent)", color: "#fff",
+              background: "var(--gradient-accent)", color: "#fff",
               fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               boxShadow: "0 4px 16px rgba(37,99,235,0.25)",
