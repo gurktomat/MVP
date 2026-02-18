@@ -161,24 +161,20 @@ function getStructuredData(view, viewData) {
   const breadcrumbs = [{ name: "Home", url: BASE_URL }];
 
   if (view === "home") {
+    // WebSite and Organization schemas are in index.html as static JSON-LD
+    // Add ItemList of popular tests for rich results on homepage
     blocks.push({
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: "QuizLane",
-      url: BASE_URL,
-      description: "Free practice tests for driving permits, US citizenship, real estate, food handler certifications and more.",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${BASE_URL}/?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
-    });
-    blocks.push({
-      "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
-      name: "QuizLane",
-      url: BASE_URL,
-      description: "Free online test preparation platform",
+      "@type": "ItemList",
+      name: "Popular Free Practice Tests",
+      itemListElement: testCategories.slice(0, 5).flatMap((cat, ci) =>
+        cat.tests.slice(0, 2).map((t, ti) => ({
+          "@type": "ListItem",
+          position: ci * 2 + ti + 1,
+          name: t.name,
+          url: `${BASE_URL}${viewToUrl("quiz", t.id)}`,
+        }))
+      ),
     });
   }
 
@@ -234,7 +230,11 @@ function getStructuredData(view, viewData) {
         numberOfQuestions: test.questionCount,
         timeRequired: `PT${test.timeLimit}M`,
         isAccessibleForFree: true,
+        inLanguage: "en-US",
+        learningResourceType: "Practice Test",
+        interactivityType: "active",
         provider: { "@type": "Organization", name: "QuizLane", url: BASE_URL },
+        dateModified: new Date().toISOString().split("T")[0],
       });
 
       // FAQPage for state DMV tests
