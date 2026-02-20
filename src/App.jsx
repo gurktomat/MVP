@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Routes, Route, useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, useParams, Navigate, Link } from "react-router-dom";
 import { testCategories, questionBank } from "./data/questions.js";
 import { useSEO, useAnalytics } from "./seo.jsx";
 import { useMastery } from "./hooks/useMastery.js";
@@ -7,7 +7,7 @@ import { useGoal } from "./hooks/useGoal.js";
 import { MASTERY_LABELS, MASTERY_COLORS } from "./utils/sm2.js";
 import { MYSTERY_THRESHOLDS, MULTIPLIER_WEIGHTS, SPIN_SEGMENTS } from "./data/rewards.js";
 import { getContextualQuote } from "./data/quotes.js";
-import { viewToUrl, urlToView, URL_TO_TEST_MAP, URL_TO_CATEGORY_MAP } from "./utils/routes.js";
+import { viewToUrl, urlToView, URL_TO_TEST_MAP, URL_TO_CATEGORY_MAP, getCategoryUrl, getTestUrl } from "./utils/routes.js";
 import SpinWheel from "./components/SpinWheel.jsx";
 import { CelebrationOverlay } from "./components/Celebrations.jsx";
 import QuickFirePage from "./components/QuickFire.jsx";
@@ -968,23 +968,23 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
             </p>
 
             <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: isDesktop ? 52 : 36 }}>
-              <button onClick={() => onNavigate("categories")} className="tap-target" style={{
+              <Link to="/practice-tests" className="tap-target" style={{
                 padding: is4k ? "18px 40px" : "16px 32px", borderRadius: 14, border: "none", cursor: "pointer",
-                background: "var(--gradient-accent)", color: "white",
+                background: "var(--gradient-accent)", color: "white", textDecoration: "none",
                 fontFamily: "var(--font-body)", fontSize: is4k ? 17 : 16, fontWeight: 600,
                 boxShadow: "0 4px 20px rgba(37,99,235,0.3)", animation: "pulseRing 2.5s ease-out infinite",
                 display: "inline-flex", alignItems: "center", gap: 8,
               }}>
                 Start Practicing <ArrowRight size={18} />
-              </button>
-              <button onClick={() => onNavigate("progress")} className="tap-target" style={{
+              </Link>
+              <Link to="/progress" className="tap-target" style={{
                 padding: is4k ? "18px 40px" : "16px 32px", borderRadius: 14, cursor: "pointer",
-                background: "var(--surface-raised)", color: "var(--ink)",
+                background: "var(--surface-raised)", color: "var(--ink)", textDecoration: "none",
                 fontFamily: "var(--font-body)", fontSize: is4k ? 17 : 16, fontWeight: 600,
                 border: "1.5px solid var(--border)",
               }}>
                 View Progress
-              </button>
+              </Link>
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", gap: isDesktop ? 20 : 12, flexWrap: "wrap" }}>
@@ -1026,14 +1026,14 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
             gap: is4k ? 20 : 16,
           }}>
             {testCategories.map((cat, i) => (
-              <button key={cat.id} onClick={() => onNavigate("category", cat.id)}
+              <Link key={cat.id} to={getCategoryUrl(cat.id)}
                 className={`anim-fade-up anim-d${Math.min(i + 1, 6)} hover-lift hover-glow tap-target`}
                 style={{
                   textAlign: "left", padding: is4k ? 28 : isDesktop ? 24 : 20,
                   borderRadius: 20, border: "1.5px solid var(--border)",
                   background: "var(--surface-raised)", cursor: "pointer",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  position: "relative", overflow: "hidden",
+                  position: "relative", overflow: "hidden", textDecoration: "none", display: "block", color: "inherit",
                 }}>
                 <div style={{ position: "absolute", top: 0, right: 0, width: "40%", height: "40%", background: `radial-gradient(circle at top right, ${cat.accent}10, transparent 70%)`, pointerEvents: "none" }} />
                 <div style={{
@@ -1047,7 +1047,7 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
                 <span style={{ fontSize: is4k ? 14 : 13, fontWeight: 600, color: cat.accent, display: "inline-flex", alignItems: "center", gap: 4 }}>
                   {cat.tests.length} test{cat.tests.length > 1 ? "s" : ""} →
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         </Container>
@@ -1142,15 +1142,15 @@ const HomePage = ({ onNavigate, bp, stats, gameState, dueCount, goalHook, getMas
           <div className="anim-fade-up" style={{ maxWidth: 520, margin: "0 auto" }}>
             <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: is4k ? 32 : isDesktop ? 28 : 22, marginBottom: 12, color: "var(--ink)" }}>Ready to start practicing?</h2>
             <p style={{ fontSize: is4k ? 17 : 15, color: "var(--ink-muted)", marginBottom: 28 }}>Join thousands of students who passed their test on the first try.</p>
-            <button onClick={() => onNavigate("categories")} className="tap-target" style={{
+            <Link to="/practice-tests" className="tap-target" style={{
               padding: is4k ? "18px 40px" : "16px 32px", borderRadius: 14, border: "none", cursor: "pointer",
-              background: "var(--gradient-accent)", color: "white",
+              background: "var(--gradient-accent)", color: "white", textDecoration: "none",
               fontFamily: "var(--font-body)", fontSize: is4k ? 17 : 16, fontWeight: 600,
               boxShadow: "0 4px 20px rgba(37,99,235,0.3)",
               display: "inline-flex", alignItems: "center", gap: 8,
             }}>
               Get Started — It's Free <ArrowRight size={18} />
-            </button>
+            </Link>
           </div>
         </Container>
       </section>
@@ -1205,13 +1205,14 @@ const CategoriesPage = ({ onNavigate, stats, bp }) => {
               const catBest = cat.tests.filter(t => stats[t.id]?.bestScore > 0);
               const catAvg = catBest.length > 0 ? Math.round(catBest.reduce((s, t) => s + stats[t.id].bestScore, 0) / catBest.length) : 0;
               return (
-                <button key={cat.id} onClick={() => onNavigate("category", cat.id)}
+                <Link key={cat.id} to={getCategoryUrl(cat.id)}
                   className={`anim-fade-up anim-d${Math.min(i + 1, 6)} hover-lift hover-glow tap-target`}
                   style={{
                     textAlign: "left", padding: is4k ? 28 : 24,
                     borderRadius: 22, border: "1.5px solid var(--border)",
                     background: "var(--surface-raised)", cursor: "pointer",
                     transition: "all 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
+                    textDecoration: "none", display: "block", color: "inherit",
                   }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
                     <div style={{
@@ -1231,7 +1232,7 @@ const CategoriesPage = ({ onNavigate, stats, bp }) => {
                     <span style={{ fontSize: 13, color: "var(--ink-muted)" }}>{cat.tests.length} test{cat.tests.length > 1 ? "s" : ""}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: cat.accent, display: "inline-flex", alignItems: "center", gap: 4 }}>Practice <ArrowRight size={13} /></span>
                   </div>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -1307,13 +1308,13 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
               </div>
             </div>
           </div>
-          <button onClick={() => onNavigate("quiz", test.id)} className="tap-target" style={{
+          <Link to={getTestUrl(test.id)} className="tap-target" style={{
             padding: "12px 24px", borderRadius: 12, cursor: "pointer",
             background: attempts > 0 ? "var(--surface-sunken)" : "var(--gradient-accent)", color: attempts > 0 ? "var(--ink)" : "#fff",
             fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
             flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
-            border: attempts > 0 ? "1.5px solid var(--border)" : "none",
-          }}>{attempts > 0 ? <><RotateCcw size={14} /> Retry</> : <><Play size={14} /> Start</>}</button>
+            border: attempts > 0 ? "1.5px solid var(--border)" : "none", textDecoration: "none",
+          }}>{attempts > 0 ? <><RotateCcw size={14} /> Retry</> : <><Play size={14} /> Start</>}</Link>
         </div>
       </div>
     );
@@ -1325,12 +1326,13 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
     const passed = best >= test.passingScore;
     const stateAbbr = test.id.replace("dmv-", "").toUpperCase();
     return (
-      <button key={test.id} onClick={() => onNavigate("quiz", test.id)}
+      <Link key={test.id} to={getTestUrl(test.id)}
         className="tap-target hover-lift" style={{
           textAlign: "left", padding: is4k ? 20 : 16, borderRadius: 16, cursor: "pointer",
           background: "var(--surface-raised)",
           border: `1.5px solid ${attempts > 0 && passed ? "var(--success)" : "var(--border)"}`,
           transition: "all 0.25s ease", position: "relative", fontFamily: "var(--font-body)",
+          textDecoration: "none", display: "block", color: "inherit",
         }}>
         {attempts > 0 && passed && <div style={{ position: "absolute", top: 8, right: 8 }}><CheckCircle2 size={14} style={{ color: "var(--success)" }} /></div>}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
@@ -1357,18 +1359,18 @@ const CategoryPage = ({ categoryId, onNavigate, stats, bp }) => {
             <Play size={11} /> Start test
           </span>
         )}
-      </button>
+      </Link>
     );
   };
 
   return (
     <Container bp={bp}>
       <div style={{ maxWidth: hasStateTests ? (is4k ? 1200 : 1000) : (is4k ? 900 : 740), padding: isDesktop ? "40px 0 80px" : "20px 0 100px" }}>
-        <button onClick={() => onNavigate("categories")} className="tap-target anim-fade-up focus-ring" style={{
+        <Link to="/practice-tests" className="tap-target anim-fade-up focus-ring" style={{
           background: "none", border: "none", cursor: "pointer", fontSize: 14,
           color: "var(--ink-muted)", marginBottom: 24, fontFamily: "var(--font-body)",
-          display: "flex", alignItems: "center", gap: 6,
-        }}><ArrowLeft size={14} /> Back to all tests</button>
+          display: "flex", alignItems: "center", gap: 6, textDecoration: "none",
+        }}><ArrowLeft size={14} /> Back to all tests</Link>
 
         {/* Category header with progress */}
         <div className="anim-fade-up anim-d1" style={{
@@ -2049,19 +2051,93 @@ const ProgressPage = ({ stats, onNavigate, bp, gameState, getMasteryStats, goalH
 /* ═══════════════════════════════════════════
    FOOTER
    ═══════════════════════════════════════════ */
+const FOOTER_STATE_LINKS = [
+  { abbr: "CA", name: "California" }, { abbr: "TX", name: "Texas" }, { abbr: "FL", name: "Florida" },
+  { abbr: "NY", name: "New York" }, { abbr: "PA", name: "Pennsylvania" }, { abbr: "IL", name: "Illinois" },
+  { abbr: "OH", name: "Ohio" }, { abbr: "GA", name: "Georgia" }, { abbr: "NC", name: "North Carolina" },
+  { abbr: "MI", name: "Michigan" }, { abbr: "NJ", name: "New Jersey" }, { abbr: "VA", name: "Virginia" },
+  { abbr: "WA", name: "Washington" }, { abbr: "AZ", name: "Arizona" }, { abbr: "MA", name: "Massachusetts" },
+  { abbr: "CO", name: "Colorado" },
+];
+
 const Footer = ({ bp }) => {
-  if (bp === "mobile") return null;
+  const is4k = bp === "4k";
+  const isDesktop = bp === "desktop" || is4k;
+  const isTablet = bp === "tablet";
+  const linkStyle = { color: "var(--ink-muted)", textDecoration: "none", fontSize: 13, lineHeight: 2 };
+
   return (
-    <footer style={{ borderTop: "1px solid var(--border)", padding: "32px 0", marginTop: "auto" }}>
+    <footer style={{ borderTop: "1px solid var(--border)", padding: isDesktop ? "48px 0 32px" : "32px 0 24px", marginTop: "auto" }}>
       <Container bp={bp}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Link columns — visible on tablet+ */}
+        {(isDesktop || isTablet) && (
+          <nav aria-label="Footer navigation" style={{
+            display: "grid",
+            gridTemplateColumns: isDesktop ? "repeat(4, 1fr)" : "repeat(2, 1fr)",
+            gap: isDesktop ? 32 : 20,
+            marginBottom: 32,
+          }}>
+            <div>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>Practice Tests</h3>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <Link to="/car-permit-practice-test" style={linkStyle}>Car Permit Practice Test</Link>
+                <Link to="/motorcycle-permit-practice-test" style={linkStyle}>Motorcycle Permit Test</Link>
+                <Link to="/cdl-general-knowledge-practice-test" style={linkStyle}>CDL Practice Test</Link>
+                <Link to="/us-citizenship-civics-practice-test" style={linkStyle}>US Citizenship Test</Link>
+                <Link to="/real-estate-exam-practice-test" style={linkStyle}>Real Estate Exam</Link>
+                <Link to="/food-handler-practice-test" style={linkStyle}>Food Handler Test</Link>
+                <Link to="/osha-10-hour-practice-test" style={linkStyle}>OSHA 10-Hour Test</Link>
+                <Link to="/cpr-first-aid-practice-test" style={linkStyle}>CPR & First Aid Test</Link>
+                <Link to="/notary-public-practice-test" style={linkStyle}>Notary Public Exam</Link>
+              </div>
+            </div>
+            <div>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>Categories</h3>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <Link to="/practice-tests/driving" style={linkStyle}>Driving & DMV Tests</Link>
+                <Link to="/practice-tests/citizenship" style={linkStyle}>US Citizenship</Link>
+                <Link to="/practice-tests/real-estate" style={linkStyle}>Real Estate</Link>
+                <Link to="/practice-tests/food-handler" style={linkStyle}>Food Handler</Link>
+                <Link to="/practice-tests/osha" style={linkStyle}>OSHA Safety</Link>
+                <Link to="/practice-tests/cpr" style={linkStyle}>CPR & First Aid</Link>
+                <Link to="/practice-tests/notary" style={linkStyle}>Notary Public</Link>
+                <Link to="/practice-tests" style={{ ...linkStyle, fontWeight: 600, color: "var(--accent)" }}>All Categories →</Link>
+              </div>
+            </div>
+            <div style={{ gridColumn: isDesktop ? "span 1" : "span 2" }}>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>State DMV Tests</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+                {FOOTER_STATE_LINKS.map(s => (
+                  <Link key={s.abbr} to={`/${s.name.toLowerCase().replace(/ /g, "-")}-dmv-practice-test`} style={linkStyle}>
+                    {s.name}
+                  </Link>
+                ))}
+                <Link to="/practice-tests/driving" style={{ ...linkStyle, fontWeight: 600, color: "var(--accent)" }}>All 50 States →</Link>
+              </div>
+            </div>
+            {isDesktop && (
+              <div>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>QuizLane</h3>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <Link to="/" style={linkStyle}>Home</Link>
+                  <Link to="/practice-tests" style={linkStyle}>All Practice Tests</Link>
+                  <Link to="/progress" style={linkStyle}>My Progress</Link>
+                  <Link to="/weak-areas" style={linkStyle}>Weak Areas Review</Link>
+                </div>
+              </div>
+            )}
+          </nav>
+        )}
+
+        {/* Bottom bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderTop: (isDesktop || isTablet) ? "1px solid var(--border)" : "none", paddingTop: (isDesktop || isTablet) ? 20 : 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 26, height: 26, borderRadius: 8, background: "var(--gradient-accent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ color: "white", fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13 }}>Q</span>
             </div>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 15, color: "var(--ink-light)" }}>QuizLane</span>
           </div>
-          <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>© 2026 QuizLane — Free test prep for everyone.</p>
+          <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>© {new Date().getFullYear()} QuizLane — Free test prep for everyone.</p>
         </div>
       </Container>
     </footer>

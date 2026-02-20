@@ -1,3 +1,17 @@
+# QuizLane — https://quizlane.org
+# Free practice tests for DMV, citizenship, real estate & more
+
 User-agent: *
 Allow: /
+Disallow: /quick-fire/
+Disallow: /smart-study/
+
+# Sitemaps
 Sitemap: https://quizlane.org/sitemap.xml
+
+# Crawl-delay (optional, respected by Bing/Yandex)
+User-agent: Bingbot
+Crawl-delay: 1
+
+User-agent: Yandex
+Crawl-delay: 1
